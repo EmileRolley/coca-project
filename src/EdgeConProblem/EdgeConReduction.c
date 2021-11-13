@@ -20,6 +20,13 @@ typedef struct {
     Z3_context z3_ctx;  ///< The current Z3 context.
 } g_context_s;
 
+static Z3_ast build_phi_2(g_context_s *ctx);
+static Z3_ast build_phi_3(g_context_s *ctx);
+static Z3_ast build_phi_4(g_context_s *ctx);
+static Z3_ast build_phi_5(g_context_s *ctx);
+static Z3_ast build_phi_8(g_context_s *ctx);
+static g_context_s* init_g_context(Z3_context z3_ctx, EdgeConGraph graph, int cost);
+
 Z3_ast getVariableIsIthTranslator(Z3_context ctx, int node1, int node2, int number) {
     char name[40];
 
@@ -49,12 +56,19 @@ Z3_ast getVariableLevelInSpanningTree(Z3_context ctx, int level, int component) 
     return mk_bool_var(ctx, name);
 }
 
-    return Z3_mk_false(ctx);
 Z3_ast EdgeConReduction(Z3_context ctx, EdgeConGraph edgeGraph, int cost) {
     g_context_s *gctx;
 
     gctx = init_g_context(ctx, edgeGraph, cost);
 
+    return Z3_mk_and(ctx, 5, (Z3_ast [5]) {
+            build_phi_2(gctx),
+            build_phi_3(gctx),
+            build_phi_4(gctx),
+            build_phi_5(gctx),
+            build_phi_8(gctx)
+        }
+    );
 }
 
 static g_context_s* init_g_context(Z3_context z3_ctx, EdgeConGraph graph, int cost) {
@@ -75,6 +89,25 @@ static g_context_s* init_g_context(Z3_context z3_ctx, EdgeConGraph graph, int co
     return ctx;
 }
 
+static Z3_ast build_phi_2(g_context_s *ctx) { return Z3_mk_false(ctx->z3_ctx); }
+static Z3_ast build_phi_3(g_context_s *ctx) { return Z3_mk_false(ctx->z3_ctx); }
+static Z3_ast build_phi_4(g_context_s *ctx) { return Z3_mk_false(ctx->z3_ctx); }
+
+static Z3_ast build_phi_5(g_context_s *ctx) {
+    int pos;
+    Z3_ast literals[ctx->C_H * (ctx->N - ctx->k)];
+
+    pos = 0;
+    for (int i = 0; i < ctx->C_H; ++i) {
+        for (int n = ctx->k; n < ctx->N; ++n) {
+            literals[pos++] = getVariableLevelInSpanningTree(ctx->z3_ctx, n, i);
+        }
+    }
+
+    return Z3_mk_or(ctx->z3_ctx, pos, literals);
+}
+
+static Z3_ast build_phi_8(g_context_s *ctx) { return Z3_mk_false(ctx->z3_ctx); }
 
 void getTranslatorSetFromModel(Z3_context ctx, Z3_model model, EdgeConGraph graph) {
     return;
