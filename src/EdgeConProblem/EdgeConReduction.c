@@ -8,6 +8,18 @@
 #include "EdgeConReduction.h"
 #include "Z3Tools.h"
 
+/** Macros used to improve the readability of formula construction. */
+
+#define NOT(X) Z3_mk_not(ctx->z3_ctx, X)
+#define AND(n) Z3_mk_and(ctx->z3_ctx, n, (Z3_ast[n]) {
+#define EAND })
+#define OR(n) Z3_mk_or(ctx->z3_ctx, n, (Z3_ast[n]) {
+#define EOR })
+
+#define X_(n1, n2, i) getVariableIsIthTranslator(ctx->z3_ctx, n1, n2, i)
+#define P_(j1, j2) getVariableParent(ctx->z3_ctx, j1, j2)
+#define L_(j, h) getVariableLevelInSpanningTree(ctx->z3_ctx, h, j)
+
 /** Stores all needed data used to build formulas. */
 typedef struct {
     unsigned int n;     ///< The numbers of vertex.
@@ -23,8 +35,18 @@ typedef struct {
 static Z3_ast build_phi_2(g_context_s *ctx);
 static Z3_ast build_phi_3(g_context_s *ctx);
 static Z3_ast build_phi_4(g_context_s *ctx);
-static Z3_ast build_phi_5(g_context_s *ctx);
 static Z3_ast build_phi_8(g_context_s *ctx);
+
+/**
+ * Builds the formula ensuring the constraint:
+ *
+ *  "The tree has a depth strictly greater than k"
+ *
+ * @param ctx is the current reduction context.
+ *
+ * @return the Z3 ast corresponding to the formula.
+ */
+static Z3_ast build_phi_5(const g_context_s *ctx);
 static g_context_s* init_g_context(Z3_context z3_ctx, EdgeConGraph graph, int cost);
 
 /**
@@ -78,18 +100,19 @@ Z3_ast getVariableLevelInSpanningTree(Z3_context ctx, int level, int component) 
     return mk_bool_var(ctx, name);
 }
 
-Z3_ast EdgeConReduction(Z3_context ctx, EdgeConGraph edgeGraph, int cost) {
-    g_context_s *gctx;
+Z3_ast EdgeConReduction(Z3_context z3_ctx, EdgeConGraph edgeGraph, int cost) {
+    g_context_s *ctx;
 
-    gctx = init_g_context(ctx, edgeGraph, cost);
+    ctx = init_g_context(z3_ctx, edgeGraph, cost);
 
-    return Z3_mk_or(ctx, 5, (Z3_ast [5]) {
-            build_phi_2(gctx),
-            build_phi_3(gctx),
-            build_phi_4(gctx),
-            build_phi_5(gctx),
-            build_phi_8(gctx)
-        }
+    return(
+        OR(5)
+            build_phi_2(ctx),
+            build_phi_3(ctx),
+            build_phi_4(ctx),
+            build_phi_5(ctx),
+            build_phi_8(ctx)
+        EOR
     );
 }
 
@@ -115,14 +138,15 @@ static Z3_ast build_phi_2(g_context_s *ctx) { return Z3_mk_false(ctx->z3_ctx); }
 static Z3_ast build_phi_3(g_context_s *ctx) { return Z3_mk_false(ctx->z3_ctx); }
 static Z3_ast build_phi_4(g_context_s *ctx) { return Z3_mk_false(ctx->z3_ctx); }
 
-static Z3_ast build_phi_5(g_context_s *ctx) {
+/** FIXME: needs to manage the case k > N. */
+static Z3_ast build_phi_5(const g_context_s *ctx) {
     int pos;
     Z3_ast literals[ctx->C_H * (ctx->N - ctx->k)];
 
     pos = 0;
     for (int i = 0; i < ctx->C_H; ++i) {
         for (int n = ctx->k; n < ctx->N; ++n) {
-            literals[pos++] = getVariableLevelInSpanningTree(ctx->z3_ctx, n, i);
+            literals[pos++] = L_(n, i);
         }
     }
 
