@@ -27,14 +27,36 @@ static Z3_ast build_phi_5(g_context_s *ctx);
 static Z3_ast build_phi_8(g_context_s *ctx);
 static g_context_s* init_g_context(Z3_context z3_ctx, EdgeConGraph graph, int cost);
 
+/**
+ * Checks if the edge (@p n1, @p n2) is the @p i -th translator.
+ *
+ * @param ctx is the solver context.
+ * @param model is the solver model.
+ * @param graph is a EdgeConGraph.
+ * @param n1 is the first node of the edge.
+ * @param n2 is the second node of the edge.
+ * @param i is number of the the translator.
+ *
+ * @return true if the edge (@p n1, @p n2) is the @p i -th translator of @p
+ * graph, otherwise false.
+ */
+static bool is_the_ith_translator(
+    const Z3_context ctx,
+    const Z3_model model,
+    const EdgeConGraph graph,
+    const int n1,
+    const int n2,
+    const int i
+);
+
 Z3_ast getVariableIsIthTranslator(Z3_context ctx, int node1, int node2, int number) {
     char name[40];
 
     if (node1 < node2) {
-        snprintf(name, 40, "[(%d,%d),%d]", node1, node2, number);
+        snprintf(name, 40, "x_[(%d,%d),%d]", node1, node2, number);
     }
     else {
-        snprintf(name, 40, "[(%d,%d),%d]", node2, node1, number);
+        snprintf(name, 40, "x_[(%d,%d),%d]", node2, node1, number);
     }
 
     return mk_bool_var(ctx, name);
@@ -61,7 +83,7 @@ Z3_ast EdgeConReduction(Z3_context ctx, EdgeConGraph edgeGraph, int cost) {
 
     gctx = init_g_context(ctx, edgeGraph, cost);
 
-    return Z3_mk_and(ctx, 5, (Z3_ast [5]) {
+    return Z3_mk_or(ctx, 5, (Z3_ast [5]) {
             build_phi_2(gctx),
             build_phi_3(gctx),
             build_phi_4(gctx),
@@ -110,5 +132,34 @@ static Z3_ast build_phi_5(g_context_s *ctx) {
 static Z3_ast build_phi_8(g_context_s *ctx) { return Z3_mk_false(ctx->z3_ctx); }
 
 void getTranslatorSetFromModel(Z3_context ctx, Z3_model model, EdgeConGraph graph) {
-    return;
+    int m;
+    int N;
+
+    m = getGraph(graph).numEdges;
+    computesHomogeneousComponents(graph);
+    N = getNumComponents(graph) - 1;
+
+    for (int n1 = 0; n1 < m; ++n1) {
+        for (int n2 = n1; n2 < m; ++n2) {
+            for (int i = 0; i < N; ++i) {
+                if (is_the_ith_translator(ctx, model, graph, n1, n2, i)) {
+                    addTranslator(graph, n1, n2);
+                }
+            }
+        }
+    }
+}
+
+static bool is_the_ith_translator(
+    const Z3_context ctx,
+    const Z3_model model,
+    const EdgeConGraph graph,
+    const int n1,
+    const int n2,
+    const int i
+) {
+    return(
+        valueOfVarInModel(ctx, model, getVariableIsIthTranslator(ctx, n1, n2, i))
+        && isEdgeHeterogeneous(graph, n1, n2)
+    );
 }
