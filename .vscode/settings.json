@@ -12,6 +12,7 @@
         "edgeconreduction.h": "c",
         "typeinfo": "cpp",
         "limits": "c",
-        "*.tcc": "c"
+        "*.tcc": "c",
+        "bruteforceutils.h": "c"
     }
 }
