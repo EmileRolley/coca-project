@@ -35,7 +35,7 @@ typedef struct {
 /**
  * Builds the formula ensuring the constraint:
  *
- *   "Each translator can only be associate to one edge at most"
+ *   "Each translator can only be associated with at most one edge"
  *
  * @param ctx is the current reduction context.
  *
@@ -46,7 +46,7 @@ static Z3_ast build_phi_2_1(const g_context_s *ctx);
 /**
  * Builds the formula ensuring the constraint:
  *
- *   "Each edge can only receive one translator at most"
+ *   "Each edge can only receive at most one translator"
  *
  * @param ctx is the current reduction context.
  *
@@ -268,9 +268,9 @@ static g_context_s* init_g_context(Z3_context z3_ctx, EdgeConGraph graph, int co
 }
 
 static Z3_ast build_phi_2_1(const g_context_s *ctx){
-    int nb_variables = (ctx->m * (ctx->m - 1)) / 2;
-    Z3_ast formulaTab[nb_variables];
-    int tabId = 0;
+    int nbVariables = (ctx->m * (ctx->m - 1)) / 2;
+    Z3_ast formula[nbVariables];
+    int formulaId = 0;
 
     for (int i = 0; i < ctx->N; i++){
         for(int e1 = 0; e1 < ctx->m; e1++){             // 1st node of e
@@ -278,7 +278,7 @@ static Z3_ast build_phi_2_1(const g_context_s *ctx){
                 for(int f1 = 0; f1 < ctx->m; f1++){     // 1st node of f  
                     for (int f2 = f1 + 1; f2 < ctx->m; f2++){   // 2nd node of f
                         if((e1 != f1 || e2 != f2) && isEdge(ctx->G, e1, e2) && isEdge(ctx->G, f1, f2)){
-                            formulaTab[tabId++] =  
+                            formula[formulaId++] =  
                                 OR(2) 
                                     NOT( X_(e1, e2, i)),
                                     NOT( X_(f1, f2, i))
@@ -290,21 +290,21 @@ static Z3_ast build_phi_2_1(const g_context_s *ctx){
         }
     }
 
-    return Z3_mk_and(ctx->z3_ctx, tabId, (Z3_ast *) formulaTab);
+    return Z3_mk_and(ctx->z3_ctx, formulaId, (Z3_ast *) formula);
 }
 
 
 static Z3_ast build_phi_2_2(const g_context_s *ctx){
-    int nb_variables = ((ctx->m) * (((ctx->N) * (ctx->N)) / 2));
-    Z3_ast formulaTab[nb_variables];
-    int tabId = 0;
+    int nbVariables = ((ctx->m) * (((ctx->N) * (ctx->N)) / 2));
+    Z3_ast formula[nbVariables];
+    int formulaId = 0;
 
     for(int e1 = 0; e1 < ctx->m; e1++){
         for(int e2 = e1 + 1; e2 < ctx->m; e2++){
             if(isEdge(ctx->G, e1, e2)){
                 for(int i = 0; i < ctx->N; i++){
                     for(int f = i + 1; f < ctx->N; f++){
-                        formulaTab[tabId++] =  
+                        formula[formulaId++] =  
                             OR(2) 
                                 NOT( X_(e1, e2, i) ),
                                 NOT( X_(e1, e2, f) )
@@ -315,7 +315,7 @@ static Z3_ast build_phi_2_2(const g_context_s *ctx){
         }
     }
 
-    return Z3_mk_and(ctx->z3_ctx, tabId, (Z3_ast *) formulaTab);
+    return Z3_mk_and(ctx->z3_ctx, formulaId, (Z3_ast *) formula);
 }
 
 
@@ -329,32 +329,32 @@ static Z3_ast build_phi_2(const g_context_s *ctx){
 }
 
 static Z3_ast build_phi_3_1(const g_context_s *ctx){
-    Z3_ast formulaTab[ctx->C_H];
-    int tabId = 0;
+    Z3_ast formula[ctx->C_H];
+    int formulaId = 0;
 
     for(int j = 1; j < ctx->C_H; j++){
-        Z3_ast disjunctionTab[ctx->N];
-        int disjunctionTabId = 0;
+        Z3_ast disjunctionTab[ctx->C_H];
+        int disjunctionformulaId = 0;
         for(int j_prime = 0; j_prime < ctx->N; j_prime ++){
             if( j != j_prime){
-                disjunctionTab[disjunctionTabId] = P_(j, j_prime);
+                disjunctionTab[disjunctionformulaId] = P_(j, j_prime);
             }
         }
-        formulaTab[tabId++] = Z3_mk_or(ctx->z3_ctx, disjunctionTabId, (Z3_ast *) disjunctionTab);
+        formula[formulaId++] = Z3_mk_or(ctx->z3_ctx, disjunctionformulaId, (Z3_ast *) disjunctionTab);
     }
 
-    return Z3_mk_and(ctx->z3_ctx, tabId, (Z3_ast *) formulaTab);
+    return Z3_mk_and(ctx->z3_ctx, formulaId, (Z3_ast *) formula);
 }
 
 static Z3_ast build_phi_3_2(const g_context_s *ctx) { 
-    int nb_variables = ((ctx->C_H - 1) * (ctx->C_H - 1) * (ctx->C_H - 1)) * 2;
-    Z3_ast forlumaTab[nb_variables];
-    int tabId = 0;
+    int nbVariables = ((ctx->C_H - 1) * (ctx->C_H - 1) * (ctx->C_H - 1)) * 2;
+    Z3_ast forlumaTab[nbVariables];
+    int formulaId = 0;
 
-    for(int j = 1; j < ctx->C_H; j++){
+    for(int j = 0; j < ctx->C_H; j++){
         for(int j_prime = j + 1; j_prime < ctx->C_H; j_prime++){
             for(int j_prime2 = j_prime + 1; j_prime2 < ctx->C_H; j_prime2++){
-                forlumaTab[tabId++] =  
+                forlumaTab[formulaId++] =  
                     OR(2) 
                         NOT( P_(j, j_prime) ),
                         NOT( P_(j, j_prime2) )
@@ -363,7 +363,7 @@ static Z3_ast build_phi_3_2(const g_context_s *ctx) {
         }
     }
 
-    return Z3_mk_and(ctx->z3_ctx, tabId, (Z3_ast *) forlumaTab);
+    return Z3_mk_and(ctx->z3_ctx, formulaId, (Z3_ast *) forlumaTab);
 }
 
 static Z3_ast build_phi_3(const g_context_s *ctx) { 
@@ -376,30 +376,30 @@ static Z3_ast build_phi_3(const g_context_s *ctx) {
 }
 
 static Z3_ast build_phi_4_1(const g_context_s *ctx){
-    Z3_ast formulaTab[ctx->C_H];
-    int tabId = 0;
+    Z3_ast formula[ctx->C_H];
+    int formulaId = 0;
 
     for(int i = 0; i < ctx->C_H; i++){
         Z3_ast disjunctionTab[ctx->N];
-        int disjunctionTabId = 0
+        int disjunctionformulaId = 0
         for(int n = 0; i < ctx->N; n++){
-            disjunctionTab[disjunctionTabId] = L_(i, n);
+            disjunctionTab[disjunctionformulaId] = L_(i, n);
         }
-        formulaTab[tabId++] = Z3_mk_or(ctx->z3_ctx, disjunctionTabId, (Z3_ast *) disjunctionTab);
+        formula[formulaId++] = Z3_mk_or(ctx->z3_ctx, disjunctionformulaId, (Z3_ast *) disjunctionTab);
     }
 
-    return Z3_mk_and(ctx->z3_ctx, tabId, (Z3_ast *) formulaTab);
+    return Z3_mk_and(ctx->z3_ctx, formulaId, (Z3_ast *) formula);
 }
 
 static Z3_ast build_phi_4_2(const g_context_s *ctx){
-    int nb_variables = ctx->C_H * ((ctx->N * ctx->N) / 2) * 2;
-    Z3_ast formulaTab[nb_variables];
-    tabId = 0;
+    int nbVariables = ctx->C_H * ((ctx->N * ctx->N) / 2) * 2;
+    Z3_ast formula[nbVariables];
+    formulaId = 0;
 
     for(int i = 0; i < ctx->C_H; i++){
         for(int n = 0; n < ctx->N; n++){
             for(int n_prime = n + 1; n_prime < ctx->N; n_prime++){
-                formulaTab[tabId++] =  
+                formula[formulaId++] =  
                     OR(2) 
                         NOT( L_(i, n) ),
                         NOT( L_(i, n_prime) )
@@ -408,7 +408,7 @@ static Z3_ast build_phi_4_2(const g_context_s *ctx){
         }
     }
 
-    return Z3_mk_and(ctx->z3_ctx, tabId, (Z3_ast *) formulaTab);
+    return Z3_mk_and(ctx->z3_ctx, formulaId, (Z3_ast *) formula);
 }
 
 static Z3_ast build_phi_4(const g_context_s *ctx){
