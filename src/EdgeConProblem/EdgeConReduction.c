@@ -201,8 +201,8 @@ static Z3_ast build_phi_6(const g_context_s *ctx, const int j1, const int j2) {
     Z3_ast literals[ctx->m * ctx->N];
 
     pos = 0;
-    for (int u = 0; u < ctx->m; ++u) {
-        for (int v = u + 1; v < ctx->m; ++v) {
+    for (int u = 0; u < ctx->n; ++u) {
+        for (int v = u + 1; v < ctx->n; ++v) {
             if (isEdge(ctx->G, u, v) &&
                 isNodeInComponent(ctx->graph, u, j1) &&
                 isNodeInComponent(ctx->graph, v, j2)) {
@@ -261,15 +261,15 @@ static Z3_ast build_phi_8(const g_context_s *ctx) {
 }
 
 void getTranslatorSetFromModel(Z3_context ctx, Z3_model model, EdgeConGraph graph) {
-    int m;
+    int n;
     int N;
 
-    m = getGraph(graph).numEdges;
+    n = getGraph(graph).numNodes;
     computesHomogeneousComponents(graph);
     N = getNumComponents(graph) - 1;
 
-    for (int n1 = 0; n1 < m; ++n1) {
-        for (int n2 = n1; n2 < m; ++n2) {
+    for (int n1 = 0; n1 < n; ++n1) {
+        for (int n2 = n1; n2 < n; ++n2) {
             for (int i = 0; i < N; ++i) {
                 if (is_the_ith_translator(ctx, model, graph, n1, n2, i)) {
                     addTranslator(graph, n1, n2);
