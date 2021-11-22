@@ -8,6 +8,8 @@
 #include "EdgeConReduction.h"
 #include "Z3Tools.h"
 
+#define MAX(X, Y) X > Y ? X : Y
+
 /** Macros used to improve the readability of formula construction. */
 
 #define NOT(X) Z3_mk_not(ctx->z3_ctx, X)
@@ -37,8 +39,6 @@ static Z3_ast build_phi_3(const g_context_s *ctx);
 static Z3_ast build_phi_4(const g_context_s *ctx);
 
 /**
- * FIXME: needs to manage the case k > N.
- *
  * Builds the formula ensuring the constraint:
  *
  *   "The tree has a depth strictly greater than k."
@@ -150,13 +150,13 @@ Z3_ast EdgeConReduction(Z3_context z3_ctx, EdgeConGraph edgeGraph, int cost) {
     ctx = init_g_context(z3_ctx, edgeGraph, cost);
 
     return(
-        OR(5)
+        AND(5)
             build_phi_2(ctx),
             build_phi_3(ctx),
             build_phi_4(ctx),
             build_phi_5(ctx),
             build_phi_8(ctx)
-        EOR
+        EAND
     );
 }
 
@@ -184,7 +184,10 @@ static Z3_ast build_phi_4(const g_context_s *ctx) { return Z3_mk_false(ctx->z3_c
 
 static Z3_ast build_phi_5(const g_context_s *ctx) {
     int pos;
-    Z3_ast literals[ctx->C_H * (ctx->N - ctx->k)];
+    Z3_ast literals[
+        ctx->C_H *
+        (ctx->N <= ctx->k ? ctx->N : (ctx->N - ctx->k))
+    ];
 
     pos = 0;
     for (int i = 0; i < ctx->C_H; ++i) {
