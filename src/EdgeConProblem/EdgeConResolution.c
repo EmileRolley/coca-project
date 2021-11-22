@@ -17,13 +17,14 @@ int BruteForceEdgeCon(EdgeConGraph graph)
     Graph g = getGraph(graph);
     int numHeteregeneousEdges = getNumHeteregeneousEdges(graph);
     int heterogeneousEdges[numHeteregeneousEdges];
-    int N = getNumComponents(graph);
+    int N = getNumComponents(graph) - 1;
     int maxSubHt = binCoeff(numHeteregeneousEdges, N);
     int numSubHt;
     bool subSetOfHt[orderG(g) * orderG(g)];
     bool valid;
 
-    if (maxSubHt == 0) return -1;
+    if (maxSubHt == 0)
+        return -1;
 
     getHeterogeneousEdges(graph, heterogeneousEdges);
 
@@ -81,7 +82,7 @@ int MaxCostAux(Graph graph, bool *C, int n, int *col)
     int queueNodesMaxSize = orderG(graph);
     int queueNodes[queueNodesMaxSize];
     int queueNodesRear = -1;
-    int queueNodesFront = -1; 
+    int queueNodesFront = -1;
 
     int cost[orderG(graph)];
     memset(cost, 0, sizeof cost);
@@ -93,7 +94,8 @@ int MaxCostAux(Graph graph, bool *C, int n, int *col)
     while (queueNodesRear >= queueNodesFront) /* While not empty */
     {
         x = QueuePop(queueNodes, &queueNodesRear, &queueNodesFront);
-        if (x == -1) return -1;
+        if (x == -1)
+            return -1;
 
         for (int y = 0; y < orderG(graph); y++)
         {
