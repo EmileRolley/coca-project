@@ -268,15 +268,14 @@ static g_context_s* init_g_context(Z3_context z3_ctx, EdgeConGraph graph, int co
 }
 
 static Z3_ast build_phi_2_1(const g_context_s *ctx){
-    int nbVariables = (ctx->m * (ctx->m - 1)) / 2;
-    Z3_ast formula[nbVariables];
+    Z3_ast formula[ctx->N * (ctx->m * ctx->m - 1)];
     int formulaId = 0;
 
     for (int i = 0; i < ctx->N; i++){
-        for(int e1 = 0; e1 < ctx->m; e1++){             // 1st node of e
-            for(int e2 = e1 + 1; e2 < ctx->m; e2++){    // 2nd node of e
-                for(int f1 = 0; f1 < ctx->m; f1++){     // 1st node of f  
-                    for (int f2 = f1 + 1; f2 < ctx->m; f2++){   // 2nd node of f
+        for(int e1 = 0; e1 < ctx->n; e1++){             // 1st node of e
+            for(int e2 = e1 + 1; e2 < ctx->n; e2++){    // 2nd node of e
+                for(int f1 = 0; f1 < ctx->n; f1++){     // 1st node of f  
+                    for (int f2 = f1 + 1; f2 < ctx->n; f2++){   // 2nd node of f
                         if((e1 != f1 || e2 != f2) && isEdge(ctx->G, e1, e2) && isEdge(ctx->G, f1, f2)){
                             formula[formulaId++] =  
                                 OR(2) 
@@ -299,15 +298,15 @@ static Z3_ast build_phi_2_2(const g_context_s *ctx){
     Z3_ast formula[nbVariables];
     int formulaId = 0;
 
-    for(int e1 = 0; e1 < ctx->m; e1++){
-        for(int e2 = e1 + 1; e2 < ctx->m; e2++){
+    for(int e1 = 0; e1 < ctx->n; e1++){
+        for(int e2 = e1 + 1; e2 < ctx->n; e2++){
             if(isEdge(ctx->G, e1, e2)){
                 for(int i = 0; i < ctx->N; i++){
-                    for(int f = i + 1; f < ctx->N; f++){
+                    for(int j = i + 1; j < ctx->N; j++){
                         formula[formulaId++] =  
                             OR(2) 
                                 NOT( X_(e1, e2, i) ),
-                                NOT( X_(e1, e2, f) )
+                                NOT( X_(e1, e2, j) )
                             EOR;
                     }
                 }
@@ -347,7 +346,7 @@ static Z3_ast build_phi_3_1(const g_context_s *ctx){
 }
 
 static Z3_ast build_phi_3_2(const g_context_s *ctx) { 
-    int nbVariables = ((ctx->C_H - 1) * (ctx->C_H - 1) * (ctx->C_H - 1)) * 2;
+    int nbVariables = ((ctx->C_H - 1) * (ctx->C_H - 1) * (ctx->C_H - 1));
     Z3_ast forlumaTab[nbVariables];
     int formulaId = 0;
 
@@ -392,7 +391,7 @@ static Z3_ast build_phi_4_1(const g_context_s *ctx){
 }
 
 static Z3_ast build_phi_4_2(const g_context_s *ctx){
-    int nbVariables = ctx->C_H * ((ctx->N * ctx->N) / 2) * 2;
+    int nbVariables = ctx->C_H * ((ctx->N * ctx->N) / 2);
     Z3_ast formula[nbVariables];
     formulaId = 0;
 
