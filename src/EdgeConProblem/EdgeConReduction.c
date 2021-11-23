@@ -380,7 +380,7 @@ static Z3_ast build_phi_4_1(const g_context_s *ctx){
 
     for(int i = 0; i < ctx->C_H; i++){
         Z3_ast disjunctionTab[ctx->N];
-        int disjunctionformulaId = 0
+        int disjunctionformulaId = 0;
         for(int n = 0; i < ctx->N; n++){
             disjunctionTab[disjunctionformulaId] = L_(i, n);
         }
@@ -393,7 +393,7 @@ static Z3_ast build_phi_4_1(const g_context_s *ctx){
 static Z3_ast build_phi_4_2(const g_context_s *ctx){
     int nbVariables = ctx->C_H * ((ctx->N * ctx->N) / 2);
     Z3_ast formula[nbVariables];
-    formulaId = 0;
+    int formulaId = 0;
 
     for(int i = 0; i < ctx->C_H; i++){
         for(int n = 0; n < ctx->N; n++){
