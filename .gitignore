@@ -56,3 +56,6 @@ doc
 
 # Executable
 graphProblemSolver
+
+sol/default.formula
+sol/default_Sat.dot
