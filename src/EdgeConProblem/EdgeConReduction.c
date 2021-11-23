@@ -8,6 +8,10 @@
 #include "EdgeConReduction.h"
 #include "Z3Tools.h"
 
+
+#define MAX(X, Y) X > Y ? X : Y
+
+
 /** Macros used to improve the readability of formula construction. */
 
 #define NOT(X) Z3_mk_not(ctx->z3_ctx, X)
@@ -31,6 +35,7 @@ typedef struct {
     EdgeConGraph graph; ///< The EdgeConGraph.
     Z3_context z3_ctx;  ///< The current Z3 context.
 } g_context_s;
+
 
 /**
  * Builds the formula ensuring the constraint:
@@ -239,13 +244,14 @@ Z3_ast EdgeConReduction(Z3_context z3_ctx, EdgeConGraph edgeGraph, int cost) {
     ctx = init_g_context(z3_ctx, edgeGraph, cost);
 
     return(
-        OR(5)
+
+        AND(5)
             build_phi_2(ctx),
             build_phi_3(ctx),
             build_phi_4(ctx),
             build_phi_5(ctx),
             build_phi_8(ctx)
-        EOR
+        EAND
     );
 }
 
@@ -421,10 +427,12 @@ static Z3_ast build_phi_4(const g_context_s *ctx){
 
 
 
-
 static Z3_ast build_phi_5(const g_context_s *ctx) {
     int pos;
-    Z3_ast literals[ctx->C_H * (ctx->N - ctx->k)];
+    Z3_ast literals[
+        ctx->C_H *
+        (ctx->N <= ctx->k ? ctx->N : (ctx->N - ctx->k))
+    ];
 
     pos = 0;
     for (int i = 0; i < ctx->C_H; ++i) {
@@ -441,8 +449,8 @@ static Z3_ast build_phi_6(const g_context_s *ctx, const int j1, const int j2) {
     Z3_ast literals[ctx->m * ctx->N];
 
     pos = 0;
-    for (int u = 0; u < ctx->m; ++u) {
-        for (int v = u + 1; v < ctx->m; ++v) {
+    for (int u = 0; u < ctx->n; ++u) {
+        for (int v = u + 1; v < ctx->n; ++v) {
             if (isEdge(ctx->G, u, v) &&
                 isNodeInComponent(ctx->graph, u, j1) &&
                 isNodeInComponent(ctx->graph, v, j2)) {
@@ -469,7 +477,7 @@ static Z3_ast build_phi_7(const g_context_s *ctx, const int j1, const int j2) {
             EOR;
     }
 
-    return Z3_mk_or(ctx->z3_ctx, pos, (Z3_ast *) literals);
+    return Z3_mk_or(ctx->z3_ctx, pos, literals);
 }
 
 
@@ -498,6 +506,39 @@ static Z3_ast build_phi_8(const g_context_s *ctx) {
     }
 
     return Z3_mk_and(ctx->z3_ctx, pos, literals);
+}
+
+void getTranslatorSetFromModel(Z3_context ctx, Z3_model model, EdgeConGraph graph) {
+    int n;
+    int N;
+
+    n = getGraph(graph).numNodes;
+    computesHomogeneousComponents(graph);
+    N = getNumComponents(graph) - 1;
+
+    for (int n1 = 0; n1 < n; ++n1) {
+        for (int n2 = n1; n2 < n; ++n2) {
+            for (int i = 0; i < N; ++i) {
+                if (is_the_ith_translator(ctx, model, graph, n1, n2, i)) {
+                    addTranslator(graph, n1, n2);
+                }
+            }
+        }
+    }
+}
+
+static bool is_the_ith_translator(
+    const Z3_context ctx,
+    const Z3_model model,
+    const EdgeConGraph graph,
+    const int n1,
+    const int n2,
+    const int i
+) {
+    return(
+        valueOfVarInModel(ctx, model, getVariableIsIthTranslator(ctx, n1, n2, i))
+        && isEdgeHeterogeneous(graph, n1, n2)
+    );
 }
 
 void getTranslatorSetFromModel(Z3_context ctx, Z3_model model, EdgeConGraph graph) {
