@@ -154,8 +154,6 @@ static Z3_ast build_phi_5(const g_context_s *ctx);
 static Z3_ast build_phi_6(const g_context_s *ctx, const int j1, const int j2);
 
 /**
- * FIXME: is the DM2 report h start at 1 but it should start at 2 because of the h-1.
- *
  * Builds the formula ensuring the constraint:
  *
  *   "For two homogeneous components, if X_@p j1 is at level h then X_@p j2
@@ -250,7 +248,7 @@ Z3_ast EdgeConReduction(Z3_context z3_ctx, EdgeConGraph edgeGraph, int cost) {
     );
 }
 
-static g_context_s* init_g_context(Z3_context z3_ctx, EdgeConGraph graph, int cost) {
+static g_context_s *init_g_context(Z3_context z3_ctx, EdgeConGraph graph, int cost) {
     g_context_s *ctx = NULL;
 
     ctx = malloc(sizeof(g_context_s));
@@ -276,17 +274,16 @@ static Z3_ast build_phi_2_1(const g_context_s *ctx) {
     for (int i = 0; i < ctx->N; i++) {
         for (int e1 = 0; e1 < ctx->n; e1++) {
             for (int e2 = e1 + 1; e2 < ctx->n; e2++) {
-                for (int f1 = 0; f1 < ctx->n; f1++) {
-                    for (int f2 = f1 + 1; f2 < ctx->n; f2++) {
-                        if ((e1 != f1 || e2 != f2) &&
-                            isEdge(ctx->G, e1, e2) &&
-                            isEdge(ctx->G, f1, f2))
-                        {
-                            phi_2_1[pos++] =
-                                OR(2)
-                                    NOT( X_(e1, e2, i) ),
-                                    NOT( X_(f1, f2, i) )
-                                EOR;
+                if (isEdge(ctx->G, e1, e2)) {
+                    for (int f1 = 0; f1 < ctx->n; f1++) {
+                        for (int f2 = f1 + 1; f2 < ctx->n; f2++) {
+                            if ((e1 != f1 || e2 != f2) && isEdge(ctx->G, f1, f2)) {
+                                phi_2_1[pos++] =
+                                    OR(2)
+                                        NOT( X_(e1, e2, i) ),
+                                        NOT( X_(f1, f2, i) )
+                                    EOR;
+                            }
                         }
                     }
                 }
@@ -341,7 +338,7 @@ static Z3_ast build_phi_3_1(const g_context_s *ctx) {
         Z3_ast phi_3_1_disj[ctx->C_H];
 
         pos2 = 0;
-        for (int j1 = 0; j1 < ctx->N; j1 ++) {
+        for (int j1 = 0; j1 < ctx->C_H; j1 ++) {
             if (j != j1) {
                 phi_3_1_disj[pos2++] = P_(j, j1);
             }
@@ -457,13 +454,19 @@ static Z3_ast build_phi_6(const g_context_s *ctx, const int j1, const int j2) {
     for (int u = 0; u < ctx->n; ++u) {
         for (int v = u + 1; v < ctx->n; ++v) {
             if (isEdge(ctx->G, u, v) &&
-                isNodeInComponent(ctx->graph, u, j1) &&
-                isNodeInComponent(ctx->graph, v, j2)) {
+                isNodeInComponent(ctx->graph, v, j1) &&
+                isNodeInComponent(ctx->graph, u, j2))
+            {
+                /* printf("[DEBUG] - phi_6(%d, %d)\n", j1, j2); */
                 for (int i = 0; i < ctx->N; ++i) {
                     phi_6[pos++] = X_(u, v, i);
                 }
             }
         }
+    }
+
+    if (0 == pos) {
+        return Z3_mk_false(ctx->z3_ctx);
     }
 
     return Z3_mk_or(ctx->z3_ctx, pos, phi_6);
@@ -482,31 +485,32 @@ static Z3_ast build_phi_7(const g_context_s *ctx, const int j1, const int j2) {
             EOR;
     }
 
-    return Z3_mk_or(ctx->z3_ctx, pos, phi_7);
+    return Z3_mk_and(ctx->z3_ctx, pos, phi_7);
 }
-
 
 static Z3_ast build_phi_8(const g_context_s *ctx) {
     int pos;
     Z3_ast phi_8[ctx->C_H * ctx->C_H];
 
     pos = 0;
-    for (int j1 = 0; j1 < ctx->C_H - 1; ++j1) {
-        for (int j2 = j1 + 1; j2 < ctx->C_H; ++j2) {
-            Z3_ast not_p_j1_j2;
+    for (int j1 = 0; j1 < ctx->C_H; ++j1) {
+        for (int j2 = 0; j2 < ctx->C_H; ++j2) {
+            if (j1 != j2) {
+                Z3_ast not_p_j1_j2;
 
-            not_p_j1_j2 = NOT( P_(j1, j2) );
-            phi_8[pos++] =
-                AND(2)
-                    OR(2)
-                        not_p_j1_j2,
-                        build_phi_6(ctx, j1, j2),
-                    EOR,
-                    OR(2)
-                        not_p_j1_j2,
-                        build_phi_7(ctx, j1, j2)
-                    EOR
-                EAND;
+                not_p_j1_j2 = NOT( P_(j1, j2) );
+                phi_8[pos++] =
+                    AND(2)
+                        OR(2)
+                            not_p_j1_j2,
+                            build_phi_6(ctx, j1, j2)
+                        EOR,
+                        OR(2)
+                            not_p_j1_j2,
+                            build_phi_7(ctx, j1, j2)
+                        EOR
+                    EAND;
+            }
         }
     }
 
@@ -518,18 +522,30 @@ void getTranslatorSetFromModel(Z3_context ctx, Z3_model model, EdgeConGraph grap
     int N;
 
     n = getGraph(graph).numNodes;
-    computesHomogeneousComponents(graph);
     N = getNumComponents(graph) - 1;
 
     for (int n1 = 0; n1 < n; ++n1) {
-        for (int n2 = n1; n2 < n; ++n2) {
-            for (int i = 0; i < N; ++i) {
-                if (is_the_ith_translator(ctx, model, graph, n1, n2, i)) {
-                    addTranslator(graph, n1, n2);
+        for (int n2 = n1 + 1; n2 < n; ++n2) {
+            if (isEdge(getGraph(graph), n1, n2)) {
+                for (int i = 0; i < N; ++i) {
+                    if (is_the_ith_translator(ctx, model, graph, n1, n2, i)) {
+                        /* printf("[DEBUG] - val(X_{(%d, %d), %d}) = 1\n", n1, n2, i); */
+                        addTranslator(graph, n1, n2);
+                    }
                 }
             }
         }
     }
+
+    /* for (int i = 0; i < 6; ++i) { */
+        /* printf( */
+        /*     "[DEBUG] - val(P_{3, %d}) = %d\n", */
+        /*     i, */
+        /*     valueOfVarInModel(ctx, model, getVariableParent(ctx, 3, i) */
+        /* )); */
+    /* } */
+
+    computesHomogeneousComponents(graph);
 }
 
 static bool is_the_ith_translator(
@@ -542,6 +558,5 @@ static bool is_the_ith_translator(
 ) {
     return(
         valueOfVarInModel(ctx, model, getVariableIsIthTranslator(ctx, n1, n2, i))
-        && isEdgeHeterogeneous(graph, n1, n2)
     );
 }
