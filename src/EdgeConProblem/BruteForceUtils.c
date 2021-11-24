@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int QueueAdd(int data, int *queue, int *rear, int *front, int maxSize)
+int queueAdd(int data, int *queue, int *rear, int *front, int maxSize)
 {
     if (*rear != maxSize - 1) /* If queue not overflow */
     {
@@ -14,7 +14,7 @@ int QueueAdd(int data, int *queue, int *rear, int *front, int maxSize)
     }
 }
 
-int QueuePop(int *queue, int *rear, int *front)
+int queuePop(int *queue, int *rear, int *front)
 {
     if (*front == -1 || *front > *rear) /* If queue underflow */
         return -1;
@@ -129,4 +129,20 @@ void getSubSetOfHeterogeneousEdges(int *heterogeneousEdges, int n, int size, int
     getCombination(heterogeneousEdges, combination, n, size, numSubHt);
     for (int i = 0; i < size; i++)
         output[combination[i]] = true;
+}
+
+void updateGraphTranslators(EdgeConGraph graph, bool* arr) {
+    Graph g = getGraph(graph);
+    for (int u = 0; u < orderG(g); u++)
+    {
+        for (int v = u + 1; v < orderG(g); v++)
+        {
+            if (isEdgeHeterogeneous(graph, u, v))
+            {
+                int pos = u * orderG(g) + v;
+                if (arr[pos] == 1)
+                    addTranslator(graph, u, v);
+            }
+        }
+    }
 }

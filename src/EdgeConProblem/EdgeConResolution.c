@@ -1,9 +1,9 @@
-#include "EdgeConResolution.h"
-#include "Graph.h"
-#include "BruteForceUtils.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "EdgeConResolution.h"
+#include "Graph.h"
+#include "BruteForceUtils.h"
 
 const int WHITE = 0;
 const int GREY = 1;
@@ -14,6 +14,7 @@ int MaxCostAux(Graph graph, bool *C, int n, int *col);
 
 int BruteForceEdgeCon(EdgeConGraph graph)
 {
+
     Graph g = getGraph(graph);
     int numHeteregeneousEdges = getNumHeteregeneousEdges(graph);
     int heterogeneousEdges[numHeteregeneousEdges];
@@ -28,31 +29,26 @@ int BruteForceEdgeCon(EdgeConGraph graph)
 
     getHeterogeneousEdges(graph, heterogeneousEdges);
 
-    //printf("[DEBUG] Total of subSets of size %d of Ht = %d\n", N, maxSubHt);
     for (int k = 1; k <= N; k++)
     {
         valid = true;
         numSubHt = 0;
-        //printf("[DEBUG] Current k=%d\n", k);
         while (valid && numSubHt < maxSubHt) // equiv ForEach C
         {
             memset(subSetOfHt, 0, sizeof subSetOfHt);
             getSubSetOfHeterogeneousEdges(heterogeneousEdges, numHeteregeneousEdges, N, numSubHt, subSetOfHt);
 
             int cost = MaxCost(g, subSetOfHt);
-            //printf("[DEBUG] cost=%d\n", cost);
             if (cost > 0 && cost > k)
                 valid = false;
 
             numSubHt++;
         }
-        if (valid)
-        {
-            //printf("[DEBUG] K=%d\n", k);
+        if (valid) {
+            updateGraphTranslators(graph, subSetOfHt);
             return k;
         }
     }
-    //printf("[DEBUG] N=%d\n", N);
     return N;
 }
 
@@ -66,7 +62,6 @@ int MaxCost(Graph graph, bool *C)
         memset(col, WHITE, sizeof col);
         maxPrime = MaxCostAux(graph, C, node, col);
 
-        /* If there is a WHITE Node, then return 0 */
         for (int n = 0; n < orderG(graph); n++)
             if (col[n] == WHITE)
                 return 0;
@@ -88,12 +83,12 @@ int MaxCostAux(Graph graph, bool *C, int n, int *col)
     memset(cost, 0, sizeof cost);
 
     col[n] = GREY;
-    QueueAdd(n, queueNodes, &queueNodesRear, &queueNodesFront, queueNodesMaxSize);
+    queueAdd(n, queueNodes, &queueNodesRear, &queueNodesFront, queueNodesMaxSize);
 
     int x;
     while (queueNodesRear >= queueNodesFront) /* While not empty */
     {
-        x = QueuePop(queueNodes, &queueNodesRear, &queueNodesFront);
+        x = queuePop(queueNodes, &queueNodesRear, &queueNodesFront);
         if (x == -1)
             return -1;
 
@@ -110,7 +105,7 @@ int MaxCostAux(Graph graph, bool *C, int n, int *col)
                         cost[y] += 1;
 
                     col[y] = GREY;
-                    QueueAdd(y, queueNodes, &queueNodesRear, &queueNodesFront, queueNodesMaxSize);
+                    queueAdd(y, queueNodes, &queueNodesRear, &queueNodesFront, queueNodesMaxSize);
                 }
             }
         }
