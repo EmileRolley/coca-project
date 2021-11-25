@@ -256,8 +256,8 @@ static g_context_s *init_g_context(Z3_context z3_ctx, EdgeConGraph graph, int co
 
     ctx->graph = graph;
     ctx->G = getGraph(graph);
-    ctx->n = ctx->G.numNodes;
-    ctx->m = ctx->G.numEdges;
+    ctx->n = orderG(ctx->G);
+    ctx->m = sizeG(ctx->G);
     ctx->C_H = getNumComponents(graph);
     ctx->N = ctx->C_H - 1;
     ctx->k = cost;
