@@ -8,9 +8,7 @@
 #include "EdgeConReduction.h"
 #include "Z3Tools.h"
 
-
 #define MAX(X, Y) X > Y ? X : Y
-
 
 /** Macros used to improve the readability of formula construction. */
 
@@ -23,6 +21,32 @@
 #define X_(n1, n2, i) getVariableIsIthTranslator(ctx->z3_ctx, n1, n2, i)
 #define P_(j1, j2) getVariableParent(ctx->z3_ctx, j1, j2)
 #define L_(j, h) getVariableLevelInSpanningTree(ctx->z3_ctx, h, j)
+
+#define FORALL_TRANSLATOR(I) \
+    for (int I = 0; I < ctx->N; I++) {
+
+#define EFI }
+
+#define FORALL_EDGE(N1, N2) \
+        for (int N1 = 0; N1 < ctx->n; ++N1) { \
+            for (int N2 = N1 + 1; N2 < ctx->n; ++N2) { \
+                if (isEdge(ctx->G, N1, N2)) {
+
+#define EFE }}}
+
+#define FORALL_COMPONENT(J) \
+    for (int J = 0; J < ctx->C_H; J++) {
+
+#define FORALL_COMPONENT_EXCEPT_ROOT(J) \
+    for (int J = 1; J < ctx->C_H; J++) {
+
+#define EFC }
+
+#define FORALL_LEVEL(n) \
+    for (int n = 0; n < ctx->N; n++) {
+
+#define EFL }
+
 
 /** Stores all needed data used to build formulas. */
 typedef struct {
@@ -57,7 +81,7 @@ static Z3_ast build_phi_2_1(const g_context_s *ctx);
  *
  * @return the Z3 ast corresponding to the formula.
  */
-static Z3_ast build_phi_2_1(const g_context_s *ctx);
+static Z3_ast build_phi_2_2(const g_context_s *ctx);
 
 /**
  * Builds the conjunction of the formulas phi_2_1 and phi_2_2
@@ -131,8 +155,6 @@ static Z3_ast build_phi_4_2(const g_context_s *ctx);
 static Z3_ast build_phi_4(const g_context_s *ctx);
 
 /**
- * FIXME: needs to manage the case k > N.
- *
  * Builds the formula ensuring the constraint:
  *
  *   "The tree has a depth strictly greater than k."
@@ -158,8 +180,6 @@ static Z3_ast build_phi_5(const g_context_s *ctx);
 static Z3_ast build_phi_6(const g_context_s *ctx, const int j1, const int j2);
 
 /**
- * FIXME: is the DM2 report h start at 1 but it should start at 2 because of the h-1.
- *
  * Builds the formula ensuring the constraint:
  *
  *   "For two homogeneous components, if X_@p j1 is at level h then X_@p j2
@@ -244,7 +264,6 @@ Z3_ast EdgeConReduction(Z3_context z3_ctx, EdgeConGraph edgeGraph, int cost) {
     ctx = init_g_context(z3_ctx, edgeGraph, cost);
 
     return(
-
         AND(5)
             build_phi_2(ctx),
             build_phi_3(ctx),
@@ -255,7 +274,7 @@ Z3_ast EdgeConReduction(Z3_context z3_ctx, EdgeConGraph edgeGraph, int cost) {
     );
 }
 
-static g_context_s* init_g_context(Z3_context z3_ctx, EdgeConGraph graph, int cost) {
+static g_context_s *init_g_context(Z3_context z3_ctx, EdgeConGraph graph, int cost) {
     g_context_s *ctx = NULL;
 
     ctx = malloc(sizeof(g_context_s));
@@ -263,8 +282,8 @@ static g_context_s* init_g_context(Z3_context z3_ctx, EdgeConGraph graph, int co
 
     ctx->graph = graph;
     ctx->G = getGraph(graph);
-    ctx->n = ctx->G.numNodes;
-    ctx->m = ctx->G.numEdges;
+    ctx->n = orderG(ctx->G);
+    ctx->m = sizeG(ctx->G);
     ctx->C_H = getNumComponents(graph);
     ctx->N = ctx->C_H - 1;
     ctx->k = cost;
@@ -273,58 +292,8 @@ static g_context_s* init_g_context(Z3_context z3_ctx, EdgeConGraph graph, int co
     return ctx;
 }
 
-static Z3_ast build_phi_2_1(const g_context_s *ctx){
-    Z3_ast formula[ctx->N * (ctx->m * ctx->m - 1)];
-    int formulaId = 0;
 
-    for (int i = 0; i < ctx->N; i++){
-        for(int e1 = 0; e1 < ctx->n; e1++){             // 1st node of e
-            for(int e2 = e1 + 1; e2 < ctx->n; e2++){    // 2nd node of e
-                for(int f1 = 0; f1 < ctx->n; f1++){     // 1st node of f
-                    for (int f2 = f1 + 1; f2 < ctx->n; f2++){   // 2nd node of f
-                        if((e1 != f1 || e2 != f2) && isEdge(ctx->G, e1, e2) && isEdge(ctx->G, f1, f2)){
-                            formula[formulaId++] =
-                                OR(2)
-                                    NOT( X_(e1, e2, i)),
-                                    NOT( X_(f1, f2, i))
-                                EOR;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return Z3_mk_and(ctx->z3_ctx, formulaId, (Z3_ast *) formula);
-}
-
-
-static Z3_ast build_phi_2_2(const g_context_s *ctx){
-    int nbVariables = ((ctx->m) * (((ctx->N) * (ctx->N)) / 2));
-    Z3_ast formula[nbVariables];
-    int formulaId = 0;
-
-    for(int e1 = 0; e1 < ctx->n; e1++){
-        for(int e2 = e1 + 1; e2 < ctx->n; e2++){
-            if(isEdge(ctx->G, e1, e2)){
-                for(int i = 0; i < ctx->N; i++){
-                    for(int j = i + 1; j < ctx->N; j++){
-                        formula[formulaId++] =
-                            OR(2)
-                                NOT( X_(e1, e2, i) ),
-                                NOT( X_(e1, e2, j) )
-                            EOR;
-                    }
-                }
-            }
-        }
-    }
-
-    return Z3_mk_and(ctx->z3_ctx, formulaId, (Z3_ast *) formula);
-}
-
-
-static Z3_ast build_phi_2(const g_context_s *ctx){
+static Z3_ast build_phi_2(const g_context_s *ctx) {
     return (
         AND(2)
             build_phi_2_1(ctx),
@@ -332,43 +301,50 @@ static Z3_ast build_phi_2(const g_context_s *ctx){
         EAND
     );
 }
+static Z3_ast build_phi_2_1(const g_context_s *ctx) {
+    int pos;
+    Z3_ast phi_2_1[ctx->N * (ctx->m * ctx->m - 1)];
 
-static Z3_ast build_phi_3_1(const g_context_s *ctx){
-    Z3_ast formula[ctx->C_H];
-    int formulaId = 0;
+    pos = 0;
+    FORALL_TRANSLATOR(i)
+        FORALL_EDGE(e1, e2)
+            FORALL_EDGE(f1, f2)
+                if (e1 != f1 || e2 != f2) {
+                    phi_2_1[pos++] =
+                        OR(2)
+                            NOT( X_(e1, e2, i) ),
+                            NOT( X_(f1, f2, i) )
+                        EOR;
+                }
+            EFE
+        EFE
+    EFI
 
-    for(int j = 1; j < ctx->C_H; j++){
-        Z3_ast disjunctionTab[ctx->C_H];
-        int disjunctionformulaId = 0;
-        for(int j_prime = 0; j_prime < ctx->N; j_prime ++){
-            if( j != j_prime){
-                disjunctionTab[disjunctionformulaId] = P_(j, j_prime);
-            }
-        }
-        formula[formulaId++] = Z3_mk_or(ctx->z3_ctx, disjunctionformulaId, (Z3_ast *) disjunctionTab);
-    }
-
-    return Z3_mk_and(ctx->z3_ctx, formulaId, (Z3_ast *) formula);
+    return Z3_mk_and(ctx->z3_ctx, pos, phi_2_1);
 }
 
-static Z3_ast build_phi_3_2(const g_context_s *ctx) {
-    int nbVariables = ((ctx->C_H - 1) * (ctx->C_H - 1) * (ctx->C_H - 1));
-    Z3_ast forlumaTab[nbVariables];
-    int formulaId = 0;
+static Z3_ast build_phi_2_2(const g_context_s *ctx) {
+    int pos;
+    Z3_ast phi_2_2[ (ctx->m * ((ctx->N * ctx->N) / 2)) ];
 
-    for(int j = 0; j < ctx->C_H; j++){
-        for(int j_prime = j + 1; j_prime < ctx->C_H; j_prime++){
-            for(int j_prime2 = j_prime + 1; j_prime2 < ctx->C_H; j_prime2++){
-                forlumaTab[formulaId++] =
-                    OR(2)
-                        NOT( P_(j, j_prime) ),
-                        NOT( P_(j, j_prime2) )
-                    EOR;
-            }
-        }
+    if (1 == ctx->N) {
+        return Z3_mk_true(ctx->z3_ctx);
     }
 
-    return Z3_mk_and(ctx->z3_ctx, formulaId, (Z3_ast *) forlumaTab);
+    pos = 0;
+    FORALL_EDGE(e1, e2)
+        FORALL_TRANSLATOR(i)
+            for (int j = i + 1; j < ctx->N; j++) {
+                phi_2_2[pos++] =
+                    OR(2)
+                        NOT( X_(e1, e2, i) ),
+                        NOT( X_(e1, e2, j) )
+                    EOR;
+            }
+        EFI
+    EFE
+
+    return Z3_mk_and(ctx->z3_ctx, pos, phi_2_2);
 }
 
 static Z3_ast build_phi_3(const g_context_s *ctx) {
@@ -380,40 +356,48 @@ static Z3_ast build_phi_3(const g_context_s *ctx) {
     );
 }
 
-static Z3_ast build_phi_4_1(const g_context_s *ctx){
-    Z3_ast formula[ctx->C_H];
-    int formulaId = 0;
+static Z3_ast build_phi_3_1(const g_context_s *ctx) {
+    int pos, pos2;
+    Z3_ast phi_3_1[ctx->C_H];
 
-    for(int i = 0; i < ctx->C_H; i++){
-        Z3_ast disjunctionTab[ctx->N];
-        int disjunctionformulaId = 0;
-        for(int n = 0; i < ctx->N; n++){
-            disjunctionTab[disjunctionformulaId] = L_(i, n);
-        }
-        formula[formulaId++] = Z3_mk_or(ctx->z3_ctx, disjunctionformulaId, (Z3_ast *) disjunctionTab);
-    }
+    pos = 0;
+    FORALL_COMPONENT_EXCEPT_ROOT(j1)
+        Z3_ast phi_3_1_disj[ctx->C_H];
 
-    return Z3_mk_and(ctx->z3_ctx, formulaId, (Z3_ast *) formula);
+        pos2 = 0;
+        FORALL_COMPONENT(j2)
+            if (j1 != j2) {
+                phi_3_1_disj[pos2++] = P_(j1, j2);
+            }
+        EFC
+        phi_3_1[pos++] = Z3_mk_or(ctx->z3_ctx, pos2, phi_3_1_disj);
+    EFC
+
+    return Z3_mk_and(ctx->z3_ctx, pos, phi_3_1);
 }
 
-static Z3_ast build_phi_4_2(const g_context_s *ctx){
-    int nbVariables = ctx->C_H * ((ctx->N * ctx->N) / 2);
-    Z3_ast formula[nbVariables];
-    int formulaId = 0;
+static Z3_ast build_phi_3_2(const g_context_s *ctx) {
+    int pos;
+    Z3_ast phi_3_2[ (ctx->C_H - 1) * (ctx->C_H - 1) * (ctx->C_H - 1) ];
 
-    for(int i = 0; i < ctx->C_H; i++){
-        for(int n = 0; n < ctx->N; n++){
-            for(int n_prime = n + 1; n_prime < ctx->N; n_prime++){
-                formula[formulaId++] =
-                    OR(2)
-                        NOT( L_(i, n) ),
-                        NOT( L_(i, n_prime) )
-                    EOR;
+    pos = 0;
+    FORALL_COMPONENT_EXCEPT_ROOT(j)
+        FORALL_COMPONENT(j1)
+            if (j1 != j) {
+                for (int j2 = j1 + 1; j2 < ctx->C_H; j2++) {
+                    if (j2 != j) {
+                        phi_3_2[pos++] =
+                            OR(2)
+                                NOT( P_(j, j1) ),
+                                NOT( P_(j, j2) )
+                            EOR;
+                    }
+                }
             }
-        }
-    }
+        EFC
+    EFC
 
-    return Z3_mk_and(ctx->z3_ctx, formulaId, (Z3_ast *) formula);
+    return Z3_mk_and(ctx->z3_ctx, pos, phi_3_2);
 }
 
 static Z3_ast build_phi_4(const g_context_s *ctx){
@@ -425,106 +409,144 @@ static Z3_ast build_phi_4(const g_context_s *ctx){
     );
 }
 
+static Z3_ast build_phi_4_1(const g_context_s *ctx) {
+    int pos, pos2;
+    Z3_ast phi_4_1[ctx->C_H];
 
+    pos = 0;
+    FORALL_COMPONENT(i)
+        Z3_ast phi_4_1_disj[ctx->N];
+
+        pos2 = 0;
+        FORALL_LEVEL(n)
+            phi_4_1_disj[pos2++] = L_(i, n);
+        EFL
+        phi_4_1[pos++] = Z3_mk_or(ctx->z3_ctx, pos2, phi_4_1_disj);
+    EFC
+
+    return Z3_mk_and(ctx->z3_ctx, pos, phi_4_1);
+}
+
+static Z3_ast build_phi_4_2(const g_context_s *ctx) {
+    int pos;
+    Z3_ast phi_4_2[ ctx->C_H * (ctx->N * ctx->N) ];
+
+    pos = 0;
+    FORALL_COMPONENT(i)
+        FORALL_LEVEL(n1)
+            for (int n2 = n1 + 1; n2 < ctx->N; ++n2) {
+                phi_4_2[pos++] =
+                    OR(2)
+                        NOT( L_(i, n1) ),
+                        NOT( L_(i, n2) )
+                    EOR;
+            }
+        EFL
+    EFC
+
+    return Z3_mk_and(ctx->z3_ctx, pos, phi_4_2);
+}
 
 static Z3_ast build_phi_5(const g_context_s *ctx) {
     int pos;
-    Z3_ast literals[
+    Z3_ast phi_5[
         ctx->C_H *
         (ctx->N <= ctx->k ? ctx->N : (ctx->N - ctx->k))
     ];
 
     pos = 0;
-    for (int i = 0; i < ctx->C_H; ++i) {
+    FORALL_COMPONENT(i)
         for (int n = ctx->k; n < ctx->N; ++n) {
-            literals[pos++] = L_(n, i);
+            phi_5[pos++] = L_(i, n);
         }
-    }
+    EFC
 
-    return Z3_mk_or(ctx->z3_ctx, pos, literals);
+    return Z3_mk_or(ctx->z3_ctx, pos, phi_5);
+}
+
+static Z3_ast build_phi_8(const g_context_s *ctx) {
+    int pos;
+    Z3_ast phi_8[ctx->C_H * ctx->C_H];
+
+    pos = 0;
+    FORALL_COMPONENT(j1)
+        FORALL_COMPONENT(j2)
+            if (j1 != j2) {
+                phi_8[pos++] =
+                    AND(2)
+                        OR(2)
+                            NOT( P_(j1, j2) ),
+                            build_phi_6(ctx, j1, j2)
+                        EOR,
+                        OR(2)
+                            NOT( P_(j1, j2) ),
+                            build_phi_7(ctx, j1, j2)
+                        EOR
+                    EAND;
+            }
+        EFC
+    EFC
+
+    return Z3_mk_and(ctx->z3_ctx, pos, phi_8);
 }
 
 static Z3_ast build_phi_6(const g_context_s *ctx, const int j1, const int j2) {
     int pos;
-    Z3_ast literals[ctx->m * ctx->N];
+    Z3_ast phi_6[ctx->m * ctx->N];
 
     pos = 0;
-    for (int u = 0; u < ctx->n; ++u) {
-        for (int v = u + 1; v < ctx->n; ++v) {
-            if (isEdge(ctx->G, u, v) &&
-                isNodeInComponent(ctx->graph, u, j1) &&
-                isNodeInComponent(ctx->graph, v, j2)) {
-                for (int i = 0; i < ctx->N; ++i) {
-                    literals[pos++] = X_(u, v, i);
-                }
-            }
+    FORALL_EDGE(u, v)
+        if (isNodeInComponent(ctx->graph, v, j1) &&
+            isNodeInComponent(ctx->graph, u, j2))
+        {
+            FORALL_LEVEL(i)
+                phi_6[pos++] = X_(u, v, i);
+            EFL
         }
+    EFE
+
+    if (0 == pos) {
+        return Z3_mk_false(ctx->z3_ctx);
     }
 
-    return Z3_mk_or(ctx->z3_ctx, pos, literals);
+    return Z3_mk_or(ctx->z3_ctx, pos, phi_6);
 }
 
 static Z3_ast build_phi_7(const g_context_s *ctx, const int j1, const int j2) {
     int pos;
-    Z3_ast literals[ctx->N];
+    Z3_ast phi_7[ctx->N];
 
     pos = 0;
     for (int h = 1; h < ctx->N; ++h) {
-        literals[pos++] =
+        phi_7[pos++] =
             OR(2)
                 NOT( L_(j1, h) ),
                 L_(j2, h - 1)
             EOR;
     }
 
-    return Z3_mk_or(ctx->z3_ctx, pos, literals);
-}
-
-
-static Z3_ast build_phi_8(const g_context_s *ctx) {
-    int pos;
-    Z3_ast literals[ctx->C_H * ctx->C_H];
-
-    pos = 0;
-    for (int j1 = 0; j1 < ctx->C_H - 1; ++j1) {
-        for (int j2 = j1 + 1; j2 < ctx->C_H; ++j2) {
-            Z3_ast not_p_j1_j2;
-
-            not_p_j1_j2 = NOT( P_(j1, j2) );
-            literals[pos++] =
-                AND(2)
-                    OR(2)
-                        not_p_j1_j2,
-                        build_phi_6(ctx, j1, j2),
-                    EOR,
-                    OR(2)
-                        not_p_j1_j2,
-                        build_phi_7(ctx, j1, j2)
-                    EOR
-                EAND;
-        }
-    }
-
-    return Z3_mk_and(ctx->z3_ctx, pos, literals);
+    return Z3_mk_and(ctx->z3_ctx, pos, phi_7);
 }
 
 void getTranslatorSetFromModel(Z3_context ctx, Z3_model model, EdgeConGraph graph) {
     int n;
     int N;
 
-    n = getGraph(graph).numNodes;
-    computesHomogeneousComponents(graph);
+    n = orderG(getGraph(graph));
     N = getNumComponents(graph) - 1;
 
     for (int n1 = 0; n1 < n; ++n1) {
-        for (int n2 = n1; n2 < n; ++n2) {
-            for (int i = 0; i < N; ++i) {
-                if (is_the_ith_translator(ctx, model, graph, n1, n2, i)) {
-                    addTranslator(graph, n1, n2);
+        for (int n2 = n1 + 1; n2 < n; ++n2) {
+            if (isEdge(getGraph(graph), n1, n2)) {
+                for (int i = 0; i < N; ++i) {
+                    if (is_the_ith_translator(ctx, model, graph, n1, n2, i)) {
+                        addTranslator(graph, n1, n2);
+                    }
                 }
             }
         }
     }
+    computesHomogeneousComponents(graph);
 }
 
 static bool is_the_ith_translator(
@@ -537,6 +559,5 @@ static bool is_the_ith_translator(
 ) {
     return(
         valueOfVarInModel(ctx, model, getVariableIsIthTranslator(ctx, n1, n2, i))
-        && isEdgeHeterogeneous(graph, n1, n2)
     );
 }
