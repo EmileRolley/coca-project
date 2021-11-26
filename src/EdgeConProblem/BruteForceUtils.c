@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -39,7 +40,7 @@ int binCoeff(int n, int k)
     for (int i = 0; i < k; i++) {
         c = c * (n - i) / (i + 1);
     }
-    
+
     return c;
 }
 
@@ -50,8 +51,10 @@ void getCombination(int arr[], int output[], int n, int r, int m)
     int val;
     int *c;
 
+    assert( NULL != (c = malloc(sizeof(int))) );
+
     val = 0;
-    *c = &val;
+    *c = val;
     // Print all combinations using the temporary array 'data[]'
     combinationUtil(arr, output, n, r, 0, data, 0, c, m);
 }
