@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "EdgeConResolution.h"
 #include "Graph.h"
 #include "BruteForceUtils.h"
@@ -9,12 +10,19 @@ const int WHITE = 0;
 const int GREY = 1;
 const int BLACK = 2;
 
+/**
+ * @brief Calculates the maximal cost of all valid paths between 2 vertices
+ *
+ * @param graph A EdgeConGraph.
+ * @param C subset of heterogeneous edges
+ * 
+ * @return the maximal cost of all valid paths 
+ */
 int MaxCost(Graph graph, bool *C);
 int MaxCostAux(Graph graph, bool *C, int n, int *col);
 
 int BruteForceEdgeCon(EdgeConGraph graph)
 {
-
     Graph g = getGraph(graph);
     int numHeteregeneousEdges = getNumHeteregeneousEdges(graph);
     int heterogeneousEdges[numHeteregeneousEdges];
@@ -33,7 +41,7 @@ int BruteForceEdgeCon(EdgeConGraph graph)
     {
         valid = true;
         numSubHt = 0;
-        while (valid && numSubHt < maxSubHt) // equiv ForEach C
+        while (valid && numSubHt < maxSubHt) // Equivalent to a ForEach
         {
             memset(subSetOfHt, 0, sizeof subSetOfHt);
             getSubSetOfHeterogeneousEdges(heterogeneousEdges, numHeteregeneousEdges, N, numSubHt, subSetOfHt);
@@ -50,14 +58,17 @@ int BruteForceEdgeCon(EdgeConGraph graph)
             return k;
         }
     }
+
     return N;
 }
 
 int MaxCost(Graph graph, bool *C)
 {
-    int max = 0;
+    int max;
     int maxPrime;
     int col[orderG(graph)];
+
+    max = 0;
     for (int node = 0; node < orderG(graph); node++)
     {
         memset(col, WHITE, sizeof col);
@@ -70,6 +81,7 @@ int MaxCost(Graph graph, bool *C)
         if (maxPrime > max)
             max = maxPrime;
     }
+
     return max;
 }
 
@@ -87,7 +99,7 @@ int MaxCostAux(Graph graph, bool *C, int n, int *col)
     queueAdd(n, queueNodes, &queueNodesRear, &queueNodesFront, queueNodesMaxSize);
 
     int x;
-    while (queueNodesRear >= queueNodesFront) /* While not empty */
+    while (queueNodesRear >= queueNodesFront)   // While not empty
     {
         x = queuePop(queueNodes, &queueNodesRear, &queueNodesFront);
         if (x == -1)
@@ -101,7 +113,7 @@ int MaxCostAux(Graph graph, bool *C, int n, int *col)
                 {
                     cost[y] = cost[x];
 
-                    /* If (x, y) includes in C */
+                    // If (x, y) is include in C
                     if (C[x * orderG(graph) + y] == 1)
                         cost[y] += 1;
 
@@ -112,5 +124,6 @@ int MaxCostAux(Graph graph, bool *C, int n, int *col)
         }
         col[x] = BLACK;
     }
+
     return maxOfArray(cost, orderG(graph));
 }
