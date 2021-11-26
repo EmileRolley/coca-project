@@ -292,6 +292,7 @@ static g_context_s *init_g_context(Z3_context z3_ctx, EdgeConGraph graph, int co
     return ctx;
 }
 
+
 static Z3_ast build_phi_2(const g_context_s *ctx) {
     return (
         AND(2)

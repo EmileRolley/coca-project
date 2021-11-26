@@ -57,5 +57,9 @@ doc
 # Executable
 graphProblemSolver
 
+# Environment
+.vscode
+
 sol/default.formula
 sol/default_Sat.dot
+sol/default_Brute.dot
