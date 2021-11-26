@@ -1,7 +1,8 @@
-#include "BruteForceUtils.h"
-#include "Graph.h"
 #include <stdlib.h>
 #include <stdio.h>
+
+#include "BruteForceUtils.h"
+#include "Graph.h"
 
 int queueAdd(int data, int *queue, int *rear, int *front, int maxSize)
 {
@@ -34,8 +35,7 @@ int binCoeff(int n, int k)
     k = min(k, n - k); // Take advantage of symmetry
 
     int c = 1;
-    for (int i = 0; i < k; i++)
-    {
+    for (int i = 0; i < k; i++) {
         c = c * (n - i) / (i + 1);
     }
     return c;

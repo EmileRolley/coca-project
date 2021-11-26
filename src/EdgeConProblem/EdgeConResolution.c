@@ -57,6 +57,9 @@ int BruteForceEdgeCon(EdgeConGraph graph) {
             return k;
         }
     }
+
+    updateGraphTranslators(graph, subSetOfHt);
+    computesHomogeneousComponents(graph);
     return N;
 }
 
@@ -113,7 +116,7 @@ int MaxCostAux(Graph graph, bool *C, int s, int *col) {
                     cost[y] = cost[x];
 
                     /* If (x, y) includes in C */
-                    if (C[x * n + y]) {
+                    if ((x < y && C[x * n + y]) || C[y * n + x]) {
                         ++cost[y];
                     }
 
