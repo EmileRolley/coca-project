@@ -6,9 +6,9 @@
 
 int queueAdd(int data, int *queue, int *rear, int *front, int maxSize)
 {
-    if (*rear != maxSize - 1) /* If queue not overflow */
+    if (*rear != maxSize - 1)   // If there is no queue overflow
     {
-        if (*front == -1) /*If queue is initially empty */
+        if (*front == -1)   // If queue is initially empty
             *front = 0;
         *rear += 1;
         queue[*rear] = data;
@@ -17,10 +17,11 @@ int queueAdd(int data, int *queue, int *rear, int *front, int maxSize)
 
 int queuePop(int *queue, int *rear, int *front)
 {
-    if (*front == -1 || *front > *rear) /* If queue underflow */
+    if (*front == -1 || *front > *rear) // If there is a queue underflow
         return -1;
 
-    int data = queue[*front];
+    int data;
+    data = queue[*front];
     *front += 1;
     return data;
 }
@@ -38,28 +39,29 @@ int binCoeff(int n, int k)
     for (int i = 0; i < k; i++) {
         c = c * (n - i) / (i + 1);
     }
+    
     return c;
 }
 
 void getCombination(int arr[], int output[], int n, int r, int m)
 {
-    // A temporary array to store all combination
-    // one by one
+    // A temporary array to store all combinations one by one
     int data[r];
-    int val = 0;
-    int *c = &val;
+    int val;
+    int *c;
 
-    // Print all combination using temporary array 'data[]'
+    val = 0;
+    *c = &val;
+    // Print all combinations using the temporary array 'data[]'
     combinationUtil(arr, output, n, r, 0, data, 0, c, m);
 }
 
 void combinationUtil(int arr[], int output[], int n, int r, int index, int data[], int i, int *c, int m)
 {
-
     if (*c > m)
         return;
 
-    // Current combination is ready, print it
+    // If current combination is ready, print it
     if (index == r)
     {
         if (m == *c)
@@ -77,13 +79,12 @@ void combinationUtil(int arr[], int output[], int n, int r, int index, int data[
     if (i >= n)
         return;
 
-    // current is included, put next at next location
+    // Current combination is included, put next at next location
     data[index] = arr[i];
     combinationUtil(arr, output, n, r, index + 1, data, i + 1, c, m);
 
-    // current is excluded, replace it with next
-    // (Note that i+1 is passed, but index is not
-    // changed)
+    // Current combination is excluded, replace it with next one
+    // (Note that i + 1 is passed, but index is not changed)
     combinationUtil(arr, output, n, r, index, data, i + 1, c, m);
 }
 

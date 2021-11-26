@@ -1,7 +1,7 @@
 #include "EdgeConGraph.h"
 
 /**
- * @brief Get the heterogeneoous edges from @p graph and put them into @p output
+ * @brief Get the heterogeneous edges from @p graph and put them into @p output
  * 
  * @param graph EdgeConGraph
  * @param output Array
@@ -9,7 +9,7 @@
 void getHeterogeneousEdges(EdgeConGraph graph, int* output);
 
 /**
- * @brief Get subset ofthe heterogeneoous edges from @p heterogeneousEdges and put them into @p output
+ * @brief Get subset of the heterogeneous edges from @p heterogeneousEdges and put them into @p output
  * 
  * @param heterogeneousEdges Array of heterogeneous edges
  * @param n Int size of @p heterogeneousEdges
@@ -30,7 +30,6 @@ void updateGraphTranslators(EdgeConGraph graph, bool* arr);
 /**
  * @brief Binomial coefficient. From https://en.wikipedia.org/wiki/Binomial_coefficient#In_programming_languages
  * 
- *
  * @param n
  * @param k
  * 
@@ -44,7 +43,7 @@ int binCoeff(int n, int k);
  * @param arr An array of int
  * @param n Size of @p arr
  * 
- * @return Return the max of @p arr.
+ * @return Return the maximum value of @p arr.
  */
 int maxOfArray(int *arr, int n);
 
@@ -52,12 +51,12 @@ int maxOfArray(int *arr, int n);
  * @param a
  * @param b
  * 
- * @return Return the min between @p a and @p b.
+ * @return Return the minimal value between @p a and @p b.
  */
 int min(int a, int b);
 
 /**
- * @brief Get the m-nth combination of a given size. Mainly uses combinationUtil(). From https://www.geeksforgeeks.org/print-subsets-given-size-set/ 
+ * @brief Get the m-nth combinations of a given size. Mainly uses combinationUtil(). From https://www.geeksforgeeks.org/print-subsets-given-size-set/ 
  * 
  * @param arr An array containing the set
  * @param output An array to store the result
@@ -67,18 +66,11 @@ int min(int a, int b);
  */
 void getCombination(int arr[], int output[], int n, int r, int m);
 
-/* arr[]  ---> Input Array
-   n      ---> Size of input array
-   r      ---> Size of a combination to be printed
-   index  ---> Current index in data[]
-   data[] ---> Temporary array to store current combination
-   i      ---> index of current element in arr[]     */
-
 /**
  * 
  * @param arr An array containing the set
  * @param output An array to store the result
- * @param n Size of arr
+ * @param n Size of @p arr
  * @param r Size of all combinations
  * @param index Current index in @p data
  * @param data Temporary array to store current combination
@@ -89,7 +81,7 @@ void getCombination(int arr[], int output[], int n, int r, int m);
 void combinationUtil(int arr[], int output[], int n, int r, int index, int data[], int i, int *c, int m);
 
 /**
- * @brief Add to the end of the queue. From : https://www.sanfoundry.com/c-program-queue-using-array/
+ * @brief Add an element to the end of the queue. From : https://www.sanfoundry.com/c-program-queue-using-array/
  * 
  * @param data Int to add
  * @param queue Array representing the queue

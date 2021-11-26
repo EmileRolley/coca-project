@@ -34,7 +34,6 @@ int BruteForceEdgeCon(EdgeConGraph graph) {
         valid = true;
         numSubHt = 0;
         while (valid && numSubHt < maxSubHt) {
-
             memset(subSetOfHt, 0, sizeof(bool) * n * n);
 
             getSubSetOfHeterogeneousEdges(
@@ -86,6 +85,7 @@ int MaxCost(Graph graph, bool *C) {
             max = maxPrime;
         }
     }
+
     return max;
 }
 
