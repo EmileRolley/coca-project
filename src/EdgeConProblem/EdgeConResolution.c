@@ -46,6 +46,7 @@ int BruteForceEdgeCon(EdgeConGraph graph)
         }
         if (valid) {
             updateGraphTranslators(graph, subSetOfHt);
+            computesHomogeneousComponents(graph);
             return k;
         }
     }
