@@ -62,3 +62,4 @@ graphProblemSolver
 
 sol/default.formula
 sol/default_Sat.dot
+sol/default_Brute.dot

@@ -87,14 +87,15 @@ void combinationUtil(int arr[], int output[], int n, int r, int index, int data[
     combinationUtil(arr, output, n, r, index, data, i + 1, c, m);
 }
 
-int maxOfArray(int *arr, int n)
-{
+int maxOfArray(int *arr, int n) {
     int max = arr[0];
-    for (int i = 1; i < n; i++)
-    {
-        if (arr[i] > max)
+
+    for (int i = 1; i < n; i++) {
+        if (arr[i] > max) {
             max = arr[i];
+        }
     }
+
     return max;
 }
 
@@ -105,43 +106,39 @@ int min(int a, int b)
     return a;
 }
 
-void getHeterogeneousEdges(EdgeConGraph graph, int *output)
-{
+void getHeterogeneousEdges(EdgeConGraph graph, int *output) {
     int cpt = 0;
     Graph g = getGraph(graph);
-    for (int u = 0; u < orderG(g); u++)
-    {
-        for (int v = u + 1; v < orderG(g); v++)
-        {
-            if (isEdgeHeterogeneous(graph, u, v))
-            {
-                int pos = u * orderG(g) + v;
-                output[cpt] = pos;
-                cpt++;
+    int n = orderG(g);
+
+    for (int u = 0; u < n; u++) {
+        for (int v = u + 1; v < n; v++) {
+            if (isEdgeHeterogeneous(graph, u, v)) {
+                output[cpt++] = u * n + v;
             }
         }
     }
 }
 
-void getSubSetOfHeterogeneousEdges(int *heterogeneousEdges, int n, int size, int numSubHt, bool *output)
-{
+void getSubSetOfHeterogeneousEdges(int *heterogeneousEdges, int n, int size, int numSubHt, bool *output) {
     int combination[size];
+
     getCombination(heterogeneousEdges, combination, n, size, numSubHt);
-    for (int i = 0; i < size; i++)
+    for (int i = 0; i < size; i++) {
         output[combination[i]] = true;
+    }
 }
 
 void updateGraphTranslators(EdgeConGraph graph, bool* arr) {
     Graph g = getGraph(graph);
-    for (int u = 0; u < orderG(g); u++)
-    {
-        for (int v = u + 1; v < orderG(g); v++)
-        {
-            if (isEdgeHeterogeneous(graph, u, v))
-            {
-                int pos = u * orderG(g) + v;
-                if (arr[pos] == 1)
+    int n = orderG(g);
+
+    for (int u = 0; u < n; u++) {
+        for (int v = u + 1; v < n; v++) {
+            if (isEdgeHeterogeneous(graph, u, v)) {
+                if (arr[u * n + v] == 1) {
                     addTranslator(graph, u, v);
+                }
             }
         }
     }
